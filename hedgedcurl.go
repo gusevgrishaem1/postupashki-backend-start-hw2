@@ -96,11 +96,10 @@ func main() {
 		}
 
 		if err := printResponse(os.Stdout, r.r); err != nil {
-			cancel()
-			_, _ = fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			errJoin = errors.Join(errJoin, r.e)
+			continue
 		}
-		cancel()
+
 		return
 	}
 
