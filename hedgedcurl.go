@@ -33,18 +33,7 @@ func main() {
 	flag.Parse()
 
 	if showHelp {
-		flag.Usage = func() {
-			_, _ = fmt.Fprintf(flag.CommandLine.Output(),
-				"Usage: %s [options] URL [URL...]\n\nOptions:\n",
-				os.Args[0],
-			)
-
-			_, _ = fmt.Fprintln(flag.CommandLine.Output(), "  -t, --timeout SECONDS")
-			_, _ = fmt.Fprintln(flag.CommandLine.Output(), "        HTTP request timeout (default: 15)")
-			_, _ = fmt.Fprintln(flag.CommandLine.Output(), "  -h, --help")
-			_, _ = fmt.Fprintln(flag.CommandLine.Output(), "        Show this help")
-		}
-		flag.Usage()
+		usage()
 		return
 	}
 
@@ -96,7 +85,8 @@ func main() {
 		}
 
 		if err := printResponse(os.Stdout, r.r); err != nil {
-			errJoin = errors.Join(errJoin, r.e)
+			errJoin = errors.Join(errJoin, err)
+			allTimeout = false
 			continue
 		}
 
@@ -110,6 +100,18 @@ func main() {
 		}
 		os.Exit(1)
 	}
+}
+
+func usage() {
+	_, _ = fmt.Fprintf(os.Stdout,
+		"Usage: %s [options] URL [URL...]\n\nOptions:\n",
+		os.Args[0],
+	)
+
+	_, _ = fmt.Fprintln(os.Stdout, "  -t, --timeout SECONDS")
+	_, _ = fmt.Fprintln(os.Stdout, "        HTTP request timeout (default: 15)")
+	_, _ = fmt.Fprintln(os.Stdout, "  -h, --help")
+	_, _ = fmt.Fprintln(os.Stdout, "        Show this help")
 }
 
 func printResponse(w io.Writer, response *http.Response) error {
@@ -129,10 +131,6 @@ func printResponse(w io.Writer, response *http.Response) error {
 }
 
 func isTimeout(err error) bool {
-	if errors.Is(err, context.DeadlineExceeded) {
-		return true
-	}
-
 	var netErr net.Error
 	return errors.As(err, &netErr) && netErr.Timeout()
 }
